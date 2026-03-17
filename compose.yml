@@ -1,0 +1,6 @@
+services:
+  bandcamp-dl:
+    name: bandcamp-dl
+    build: .
+    ports:
+      - "8080:8080"

@@ -1,84 +1,14 @@
-import json
-from datetime import timedelta
+import re
 
-import bandcamp_dl
-from cachier import cachier
 from loguru import logger
 from nicegui import ui
 
-"""
-import requests
-
-url = "https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic"
-
-payload = {
-    "search_text": "Princewhateverer",
-    "search_filter": "",
-    "full_page": False
-}
-response = requests.request("POST", url, json=payload)
-
-print(response.text)
-"""
-# @cachier(cleanup_interval=timedelta(days=1))
-# def bandcamp_autocomplete(query: str) -> str:
-#     base_url = "https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic"
-#     payload = {"search_text": query, "search_filter": "", "full_page": False}
-#     response = requests.request("POST", base_url, json=payload)
-#     return response.json()
-import re
-
-import requests
-from bs4 import BeautifulSoup as bs
-
-
-def find_bandcamp_artists(query: str) -> str:
-    # <meta property="og:image" content="https://f4.bcbits.com/img/a3577478510_5.jpg">
-    soup = bs(query, "html.parser")
-    meta = soup.find("meta", property="og:image")
-    if meta:
-        return meta["content"]
-    return ""
-
-
-def find_bandcamp_name(query: str) -> list:
-    match = re.match("https://(.+\\.|)bandcamp.com/(album|track)/(.+)", query)
-    if match:
-        artist = match.group(1).strip(".")
-        name = match.group(3)
-        type = match.group(2)
-        return [f"{artist}", f"{name}", f"{type}"]
-    return []
-
-
-@cachier(stale_after=timedelta(days=1))
-def request_site(url: str) -> requests.Response:
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise requests.exceptions.HTTPError(
-            f"HTTP error {response.status_code}", response=response
-        )
-    return response
-
-
-def scrape_bandcamp_url(query: str) -> dict:
-    url = query
-    response = request_site(url)
-    if response.status_code == 200:
-        image_url = find_bandcamp_artists(response.text)
-        artist, name, type = find_bandcamp_name(url)
-        logger.info(f"Found: {artist} - {name} ({type}), image_url: {image_url}")
-        return {"image_url": image_url, "name": name, "type": type, "artist": artist}
-    elif response.status_code != 200:
-        raise requests.exceptions.HTTPError(
-            f"HTTP error {response.status_code}", response=response
-        )
-    return {}
-
-
-def fetch_bandcamp_url(query: str) -> dict:
-    results = scrape_bandcamp_url(query)
-    return results
+from libs.scraper import (
+    fetch_bandcamp_url,
+    find_bandcamp_artists,
+    find_bandcamp_name,
+    request_site,
+)
 
 
 class DataCard(ui.card):
